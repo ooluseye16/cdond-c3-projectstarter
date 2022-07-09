@@ -18,7 +18,7 @@ commands:
             sudo apt update
             sudo apt install -y python3 python3-pip
             python3 -m pip install --user ansible
-    install_nodejs:
+  install_nodejs:
     description: Install Node.js 13
     steps:
       - run:
