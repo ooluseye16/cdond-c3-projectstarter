@@ -10,6 +10,7 @@ commands:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+            
 jobs:
   build-frontend:
     docker:
@@ -123,13 +124,16 @@ jobs:
             aws ec2 describe-instances \
             \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:Project,Values=udacity" \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --output text >> inventory
             
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+      - destroy_enviroment
+        when: on_fail
+
   configure-infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
@@ -150,6 +154,109 @@ jobs:
           command: |
               cd .circleci/ansible
               ansible-playbook -i inventory.txt configure-server.yml
+      - destroy_enviroment
+        when: on_fail
+  run-migrations:
+    docker:
+      # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm install
+            # Run and save the migration output
+            npm run migrations > migrations_dump.txt
+      - run:
+          name: Send migration results to memstash
+          command: |
+             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+         
+           # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
+           curl https://kvdb.io/UQcrsCvKVDLfQQibfWr6HF/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+           fi
+      - destroy_enviroment
+        when: on_fail
+  deploy-frontend:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli:latest
+    steps:
+      - checkout
+      - attach_workspace:
+           at: /tmp/workspace
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            apk add --update python3-pip
+            pip3 install awscli
+            apk add --update nodejs
+            apk add --update npm
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$( aws ec2 describe-instances \
+            \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - destroy_enviroment
+        when: on_fail
+
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["	6f:02:17:e1:32:96:5d:31:0a:2c:18:64:63:a1:6f:a9"] 
+      - attach_workspace:
+           at: /tmp/workspace
+      
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            apk add --update python3-pip
+            pip3 install awscli
+            apk add --update nodejs
+            apk add --update npm
+
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy_enviroment
+        when: on_fail  
+
+
 workflows:
   my_workflow:
     jobs:
