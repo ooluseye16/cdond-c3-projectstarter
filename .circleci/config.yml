@@ -148,7 +148,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible 
-            apk add --update python3-pip
+            apk add --update python3
             pip3 install awscli
             apk add --update nodejs
             apk add --update npm
