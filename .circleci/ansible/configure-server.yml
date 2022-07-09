@@ -14,10 +14,27 @@
 
   pre_tasks:
     - name: "wait 600 seconds for target connection to become reachable/usable."
-      # Your code here
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 600
+        timeout: 600
+        state: started
+        transport: ssh
+        connection: local
+        gather_facts: false
+        vars:
+          - ansible_python_interpreter: /usr/bin/python3
+          - ansible_host_key_checking: false
+          - ansible_stdout_callback: yaml
 
     - name: "install python for Ansible."
       # Your code here
+      apt:
+        name: python3-pip
+        state: latest
+        update_cache: yes
+      when: ansible_python_interpreter is undefined
 
   # Get the environment variables from CircleCI and add to the EC2 instance
   environment:
