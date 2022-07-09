@@ -130,6 +130,26 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+  configure_infrastructure: 
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["	6f:02:17:e1:32:96:5d:31:0a:2c:18:64:63:a1:6f:a9"] 
+      - attach_workspace:
+           at: /tmp/workspace
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible 
+            
+
+      - run:
+          name: Configure server
+          command: |
+              cd .circleci/ansible
+              ansible-playbook -i inventory.txt configure-server.yml
 workflows:
   my_workflow:
     jobs:
