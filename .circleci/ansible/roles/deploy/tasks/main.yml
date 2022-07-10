@@ -8,6 +8,7 @@
   unarchive:
     src: artifact.tar.gz
     dest: ~/backend-app
+    extra_opts: ["-vvv"]
 
 - name: "Installing Node Dependencies"
   shell: |
