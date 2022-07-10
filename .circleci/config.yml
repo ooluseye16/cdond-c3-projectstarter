@@ -304,6 +304,7 @@ jobs:
             tar -czf artifact.tar.gz dist/* package*
             cd ..
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+            [ -f .circleci/ansible/roles/deploy/files/artifact.tar.gz ] && echo "This file exists!"
       - run:
           name: Deploy backend
           command: |
