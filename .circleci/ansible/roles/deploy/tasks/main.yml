@@ -4,11 +4,11 @@
     path: ~/backend-app
     state: directory
 
-- name: "Unarchive backend files"
-  unarchive:
+- name: "Unarchive backend files to ec2"
+  ansible_builtin_unarchive:
     src: artifact.tar.gz
     dest: ~/backend-app
-    extra_opts: ["-vvv"]
+    
 
 - name: "Installing Node Dependencies"
   shell: |
