@@ -30,6 +30,27 @@ commands:
             # Use n version manager to use Node.js v13.8.0
             sudo npm install --global n
             sudo n 13.8.0
+  install_tar:
+    description: Install tar
+    steps:
+      - run:
+          name: Install tar
+          command: |
+            sudo apt install -y tar
+  install_gzip:
+    description: Install gzip
+    steps:
+      - run:
+          name: Install gzip
+          command: |
+            sudo apt install -y gzip
+  install_curl: 
+    description: Install curl
+    steps:
+      - run:
+          name: Install curl
+          command: |
+            sudo apt install -y curl
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -158,6 +179,8 @@ jobs:
     steps:
       - checkout
       - install_awscli
+      - install_tar
+      - install_gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -200,6 +223,8 @@ jobs:
            at: ~/
       - install_awscli
       - install_ansible
+      - install_tar
+      - install_gzip
       - run:
           name: Configure server
           command: |
@@ -282,6 +307,8 @@ jobs:
       - install_awscli
       - install_ansible
       - install_nodejs
+      - install_tar
+      - install_gzip
       - add_ssh_keys:
           fingerprints: ["6f:02:17:e1:32:96:5d:31:0a:2c:18:64:63:a1:6f:a9"] 
       - restore_cache:
@@ -315,6 +342,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
+      - install_curl
       - install_awscli
       - install_nodejs
       - run:
