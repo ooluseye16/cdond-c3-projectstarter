@@ -391,10 +391,10 @@ jobs:
             echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
 
             aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yml \
-              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
-              --stack-name "Initial-Stack-${OLD_WORKFLOW_ID}" \
-              --tags project=udapeople
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name InitialStack \
+            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
       - destroy-environment
       - revert-migrations
   cleanup:
